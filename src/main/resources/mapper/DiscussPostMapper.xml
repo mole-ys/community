@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mole.community.dao.DiscussPostMapper">
+    <!--
+        mapper接口和映射文件保证两个一致：
+        a>mapper接口的全类名和映射文件的命名空间（namespace）保持一致
+        b>mapper接口中方法的方法名和映射文件中编写SQL的标签的id属性保持一致
+    -->
+    <sql id="selectFields">
+        id, user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+
+<!--    List<DiscussPost> selectDiscussPosts(int userId,int offset,int limit);-->
+    <select id="selectDiscussPosts" resultType="DiscussPost">
+        select <include refid="selectFields"></include>
+        from discuss_post
+        where status != 2
+        <if test="userId!=0">
+            and user_id = #{userId}
+        </if>
+        order by type desc ,create_time desc
+    </select>
+
+<!--    int selectDiscussPostRows(@Param("userId")int userId);-->
+    <select id="selectDiscussPostRows" resultType="int">
+        select count(id)
+        from discuss_post
+        where status != 2
+        <if test="userId!=0">
+            and user_id = #{userId}
+        </if>
+    </select>
+</mapper>
