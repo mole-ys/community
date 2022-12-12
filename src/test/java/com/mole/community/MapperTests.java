@@ -1,8 +1,10 @@
 package com.mole.community;
 
 import com.mole.community.dao.DiscussPostMapper;
+import com.mole.community.dao.LoginTicketMapper;
 import com.mole.community.dao.UserMapper;
 import com.mole.community.entity.DiscussPost;
+import com.mole.community.entity.LoginTicket;
 import com.mole.community.entity.User;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +31,8 @@ public class MapperTests {
     private UserMapper userMapper;
     @Autowired
     private DiscussPostMapper discussPostMapper;
+    @Autowired
+    private LoginTicketMapper loginTicketMapper;
 
     @Test
     public void testSelectUser(){
@@ -72,4 +76,26 @@ public class MapperTests {
         int rows = discussPostMapper.selectDiscussPostRows(0);
         System.out.println(rows);
     }
+
+    @Test
+    public void testInsertLoginTicket(){
+        LoginTicket loginTicket = new LoginTicket();
+        loginTicket.setUserId(101);
+        loginTicket.setTicket("aaaaabb");
+        loginTicket.setStatus(0);
+        loginTicket.setExpired(new Date(System.currentTimeMillis() + 1000 * 60 * 10));
+
+        loginTicketMapper.insertLoginTicket(loginTicket);
+    }
+
+    @Test
+    public void testSelectLoginTicket(){
+        LoginTicket loginTicket = loginTicketMapper.selectByTicket("aaaaabb");
+        System.out.println(loginTicket);
+
+        loginTicketMapper.updateStatus("aaaaabb",1);
+        loginTicket = loginTicketMapper.selectByTicket("aaaaabb");
+        System.out.println(loginTicket);
+    }
+
 }
