@@ -29,10 +29,18 @@ public class CommunityUtil {
         return DigestUtils.md5DigestAsHex(key.getBytes());
     }
 
+
+    /**
+     * @param code 编码
+     * @param msg 即时信息
+     * @param map 业务数据
+     * @return JSON格式字符串
+     */
     public static String getJSONString(int code, String msg, Map<String, Object> map) {
         JSONObject json = new JSONObject();
         json.put("code", code);
         json.put("msg", msg);
+        //把map打散，把每一个键值对都放进JSON对象
         if (map != null) {
             for (String key : map.keySet()) {
                 json.put(key, map.get(key));
@@ -41,6 +49,7 @@ public class CommunityUtil {
         return json.toJSONString();
     }
 
+    //重载方法，便于调用
     public static String getJSONString(int code, String msg) {
         return getJSONString(code, msg, null);
     }
