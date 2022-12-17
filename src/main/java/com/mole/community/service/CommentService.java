@@ -1,0 +1,67 @@
+package com.mole.community.service;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.mole.community.dao.CommentMapper;
+import com.mole.community.entity.Comment;
+import com.mole.community.util.CommunityConstant;
+import com.mole.community.util.SensitiveFilter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
+
+import java.util.List;
+
+/**
+ * @Auther: ys
+ * @Date: 2022/12/15 - 12 - 15 - 17:23
+ */
+@Service
+public class CommentService implements CommunityConstant {
+
+    @Autowired
+    private CommentMapper commentMapper;
+
+    @Autowired
+    private SensitiveFilter sensitiveFilter;
+
+    @Autowired
+    private DiscussPostService discussPostService;
+
+    public PageInfo<Comment> findCommentsByEntity(int entityType, int entityId, int pageNum, int limit){
+        PageHelper.startPage(pageNum,limit);
+        List<Comment> comments = commentMapper.selectCommentByEntity(entityType, entityId, limit);
+        PageInfo<Comment> pageInfo = new PageInfo<>(comments, 5);
+        return pageInfo;
+    }
+
+    public int findCommentCount(int entityType, int entityId){
+        return commentMapper.selectCountByEntity(entityType, entityId);
+    }
+
+    //添加评论业务，包含两次dml操作，用事务管理
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
+    public int addComment(Comment comment){
+        if(comment == null){
+            throw new IllegalArgumentException("参数不能为空！");
+        }
+        //过滤标签和敏感词
+        comment.setContent(HtmlUtils.htmlEscape(comment.getContent()));
+        comment.setContent(sensitiveFilter.filter(comment.getContent()));
+        //添加评论
+        int rows = commentMapper.insertComment(comment);
+
+        //更新帖子评论数量
+        if(comment.getEntityType() == ENTITY_TYPE_POST){
+            //查询评论数量
+            int count = commentMapper.selectCountByEntity(ENTITY_TYPE_POST, comment.getEntityId());
+            //??
+            discussPostService.updateCommentCount(comment.getEntityId(), count);
+        }
+
+        return rows;
+    }
+}

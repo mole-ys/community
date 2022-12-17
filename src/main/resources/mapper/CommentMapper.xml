@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mole.community.dao.CommentMapper">
+    <!--
+        mapper接口和映射文件保证两个一致：
+        a>mapper接口的全类名和映射文件的命名空间（namespace）保持一致
+        b>mapper接口中方法的方法名和映射文件中编写SQL的标签的id属性保持一致
+    -->
+
+    <sql id="selectFields">
+        id, user_id, entity_type, entity_id, target_id, content, status, create_time
+    </sql>
+    <sql id="insertFields">
+        user_id, entity_type, entity_id, target_id, content, status, create_time
+    </sql>
+
+<!--    List<Comment> selectCommentByEntity(int entityType, int entityId, int offSet, int limit);-->
+    <select id="selectCommentByEntity" resultType="Comment">
+        select <include refid="selectFields"></include>
+        from comment
+        where status = 0
+        and entity_type = #{entityType}
+        and entity_id = #{entityId}
+        order by create_time asc
+    </select>
+
+<!--    int selectCountByEntity(int entityType, int entityId);-->
+    <select id="selectCountByEntity" resultType="int">
+        select count(id)
+        from comment
+        where status = 0
+        and entity_type = #{entityType}
+        and entity_id = #{entityId}
+    </select>
+
+<!--    int insertComment(Comment comment);-->
+    <insert id="insertComment" parameterType="Comment">
+        insert into comment(<include refid="insertFields"></include>)
+        values (#{userId},#{entityType},#{entityId},#{targetId},#{content},#{status},#{createTime})
+    </insert>
+</mapper>

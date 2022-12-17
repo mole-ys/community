@@ -2,9 +2,11 @@ package com.mole.community;
 
 import com.mole.community.dao.DiscussPostMapper;
 import com.mole.community.dao.LoginTicketMapper;
+import com.mole.community.dao.MessageMapper;
 import com.mole.community.dao.UserMapper;
 import com.mole.community.entity.DiscussPost;
 import com.mole.community.entity.LoginTicket;
+import com.mole.community.entity.Message;
 import com.mole.community.entity.User;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +35,8 @@ public class MapperTests {
     private DiscussPostMapper discussPostMapper;
     @Autowired
     private LoginTicketMapper loginTicketMapper;
+    @Autowired
+    private MessageMapper messageMapper;
 
     @Test
     public void testSelectUser(){
@@ -96,6 +100,24 @@ public class MapperTests {
         loginTicketMapper.updateStatus("aaaaabb",1);
         loginTicket = loginTicketMapper.selectByTicket("aaaaabb");
         System.out.println(loginTicket);
+    }
+
+    @Test
+    public void testSelectLetters(){
+        List<Message> list = messageMapper.selectConversationsByUserId(111, 20);
+        list.forEach(System.out::println);
+
+        int count = messageMapper.selectConversationCount(111);
+        System.out.println(count);
+
+        list = messageMapper.selectLettersByConversationId("111_112", 10);
+        list.forEach(System.out::println);
+
+        count = messageMapper.selectLetterCount("111_112");
+        System.out.println(count);
+        //未读消息数量
+        count = messageMapper.selectLetterUnreadCount(131, "111_131");
+        System.out.println(count);
     }
 
 }
