@@ -262,4 +262,9 @@ public class UserService implements CommunityConstant {
         userMapper.updatePassword(user.getId(),newPassword);
         return map;
     }
+
+    //根据用户名查user对象
+    public User findUserByName(String username){
+        return userMapper.selectByName(username);
+    }
 }
