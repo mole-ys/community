@@ -33,6 +33,11 @@ public class HomeController implements CommunityConstant {
     @Autowired
     private LikeService likeService;
 
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    public String root(){
+        return "forward:/index/page/1";
+    }
+
     @RequestMapping(value = "/index",method = RequestMethod.GET)
     public String getIndexPage(Model model){
         List<DiscussPost> list = discussPostService.findAllDiscussPosts(0,0);
