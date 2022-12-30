@@ -1,8 +1,6 @@
 package com.mole.community.config;
 
-import com.mole.community.controller.interceptor.LoginRequiredInterceptor;
-import com.mole.community.controller.interceptor.LoginTicketInterceptor;
-import com.mole.community.controller.interceptor.TestInterceptor;
+import com.mole.community.controller.interceptor.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -20,8 +18,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private TestInterceptor testInterceptor;
     @Autowired
     private LoginTicketInterceptor loginTicketInterceptor;
+    //@Autowired
+    //private LoginRequiredInterceptor loginRequiredInterceptor;
     @Autowired
-    private LoginRequiredInterceptor loginRequiredInterceptor;
+    private MessageInterceptor messageInterceptor;
+    @Autowired
+    private DataInterceptor dataInterceptor;
 
     //注册接口就是实现这个方法
     @Override
@@ -35,7 +37,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(loginTicketInterceptor)
                 .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
 
-        registry.addInterceptor(loginRequiredInterceptor)
+        //registry.addInterceptor(loginRequiredInterceptor)
+        //        .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+
+        registry.addInterceptor(messageInterceptor)
+                .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+
+        registry.addInterceptor(dataInterceptor)
                 .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
     }
 }

@@ -16,7 +16,7 @@
         user_id, entity_type, entity_id, target_id, content, status, create_time
     </sql>
 
-<!--    List<Comment> selectCommentByEntity(int entityType, int entityId, int offSet, int limit);-->
+<!--    List<Comment> selectCommentByEntity(int entityType, int entityId, int limit);-->
     <select id="selectCommentByEntity" resultType="Comment">
         select <include refid="selectFields"></include>
         from comment
@@ -40,4 +40,11 @@
         insert into comment(<include refid="insertFields"></include>)
         values (#{userId},#{entityType},#{entityId},#{targetId},#{content},#{status},#{createTime})
     </insert>
+
+<!--    Comment selectCommentById(int id);-->
+    <select id="selectCommentById" resultType="Comment">
+        select <include refid="selectFields"></include>
+        from comment
+        where id = #{id}
+    </select>
 </mapper>

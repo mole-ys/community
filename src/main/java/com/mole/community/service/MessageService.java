@@ -7,6 +7,7 @@ import com.mole.community.dao.MessageMapper;
 import com.mole.community.dao.UserMapper;
 import com.mole.community.entity.Message;
 import com.mole.community.util.SensitiveFilter;
+import org.apache.kafka.clients.admin.MemberAssignment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
@@ -81,5 +82,29 @@ public class MessageService {
     //删除私信
     public int deleteMessage(List<Integer> id){
         return messageMapper.updateStatus(id,2);
+    }
+
+    /**
+     * 查询最新的通知
+     */
+    public Message findLatestNotice(int userId, String topic){
+        return messageMapper.selectLatestNotice(userId, topic);
+    }
+
+    public int findNoticeCount(int userId, String topic) {
+        return messageMapper.selectNoticeCount(userId,topic);
+    }
+    public int findNoticeUnreadCount(int userId, String topic) {
+        return messageMapper.selectNoticeUnreadCount(userId, topic);
+    }
+
+    /**
+     *查询某个主题所包含的通知列表并分页
+     */
+    public PageInfo<Message> findNotices(int userId, String topic, int pageNum, int limit){
+        PageHelper.startPage(pageNum, limit);
+        List<Message> messages = messageMapper.selectNotices(userId, topic);
+        PageInfo<Message> pageInfo = new PageInfo<>(messages,5);
+        return pageInfo;
     }
 }

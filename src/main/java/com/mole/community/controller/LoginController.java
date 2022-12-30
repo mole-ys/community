@@ -5,11 +5,14 @@ import com.mole.community.entity.User;
 import com.mole.community.service.UserService;
 import com.mole.community.util.CommunityConstant;
 import com.mole.community.util.CommunityUtil;
+import com.mole.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Auther: ys
@@ -37,6 +41,9 @@ public class LoginController implements CommunityConstant {
 
     @Autowired
     private Producer producer;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //配置文件中配置的整个项目的路径
     @Value("${server.servlet.context-path}")
@@ -68,7 +75,18 @@ public class LoginController implements CommunityConstant {
         BufferedImage image = producer.createImage(text);
 
         //验证码文字存入session
-        session.setAttribute("kaptcha",text);
+        //session.setAttribute("kaptcha",text);
+        //重构，存入redis
+        //验证码的归属
+        String kaptchaOwner = CommunityUtil.generateUUID();
+        //将验证码存入cookie
+        Cookie cookie = new Cookie("kaptchaOwner", kaptchaOwner);
+        cookie.setMaxAge(60);
+        cookie.setPath(contextPath);
+        response.addCookie(cookie);
+        //存入redis
+        String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+        redisTemplate.opsForValue().set(redisKey, text, 60, TimeUnit.SECONDS);
 
         //将图片输出给浏览器
         response.setContentType("image/png");
@@ -125,9 +143,17 @@ public class LoginController implements CommunityConstant {
     // 如果登录成功，我们需要把ticket发放给客户端保存，需要使用cookie，所以需要HttpServletResponse
     @RequestMapping(value = "/login",method = RequestMethod.POST)
     public String login(String username, String password, String code, boolean rememberMe,
-                        Model model, HttpSession session, HttpServletResponse response){
-        String kaptcha = (String) session.getAttribute("kaptcha");
+                        Model model, HttpServletResponse response, @CookieValue("kaptchaOwner") String kaptchaOwner){
+//        String kaptcha = (String) session.getAttribute("kaptcha");
         //检查验证码  右边那个equals方法忽略大小写
+        //重构
+        String kaptcha = null;
+        //判断是否失效
+        if (StringUtils.isNotBlank(kaptchaOwner)){
+            String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+            kaptcha = (String) redisTemplate.opsForValue().get(redisKey);
+        }
+
         if(StringUtils.isBlank(kaptcha) || StringUtils.isBlank(code) || !kaptcha.equalsIgnoreCase(code)){
             model.addAttribute("codeMsg","验证码不正确！");
             return "/site/login";
@@ -156,6 +182,7 @@ public class LoginController implements CommunityConstant {
     @RequestMapping(value = "/logout",method = RequestMethod.GET)
     public String logout(@CookieValue("ticket") String ticket){
         userService.logout(ticket);
+        SecurityContextHolder.clearContext();
         //重定向默认是get请求
         return "redirect:/login";
     }

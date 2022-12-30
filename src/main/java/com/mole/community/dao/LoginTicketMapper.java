@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
  * @Date: 2022/12/9 - 12 - 09 - 16:05
  */
 @Repository
+@Deprecated
 public interface LoginTicketMapper {
     //使用注解方式写sql,
 

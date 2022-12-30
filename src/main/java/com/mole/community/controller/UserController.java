@@ -2,9 +2,14 @@ package com.mole.community.controller;
 
 import com.mole.community.annotation.LoginRequired;
 import com.mole.community.entity.User;
+import com.mole.community.service.FollowService;
+import com.mole.community.service.LikeService;
 import com.mole.community.service.UserService;
+import com.mole.community.util.CommunityConstant;
 import com.mole.community.util.CommunityUtil;
 import com.mole.community.util.HostHolder;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +36,7 @@ import java.util.Map;
  */
 @Controller
 @RequestMapping("/user")
-public class UserController {
+public class UserController implements CommunityConstant {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
@@ -50,12 +55,62 @@ public class UserController {
     @Autowired
     private HostHolder hostHolder;
 
+    @Autowired
+    private LikeService likeService;
+
+    @Autowired
+    private FollowService followService;
+
+    @Value("${qiniu.key.access}")
+    private String accessKey;
+
+    @Value("${qiniu.key.secret}")
+    private String secretKey;
+
+    @Value("${qiniu.bucket.header.name}")
+    private String headerBucketName;
+
+    @Value("${qiniu.bucket.header.url}")
+    private String headerBucketUrl;
+
     @LoginRequired
     @RequestMapping(value = "/setting", method = RequestMethod.GET)
-    public String getSettingPage() {
+    public String getSettingPage(Model model) {
+        //上传文件名称，随机文件名
+        String fileName = CommunityUtil.generateUUID();
+
+        //设置响应信息
+        //七牛云规定了这么写
+        StringMap policy = new StringMap();
+        //成功就响应回一个JSON字符串
+        policy.put("returnBody", CommunityUtil.getJSONString(0));
+
+        //生成上传凭证
+        Auth auth = Auth.create(accessKey, secretKey);
+        //key在3600s后过期
+        String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, policy);
+
+        model.addAttribute("uploadToken", uploadToken);
+        model.addAttribute("fileName", fileName);
+
         return "/site/setting";
     }
 
+    //更新头像路径
+    @RequestMapping(value = "/header/url", method = RequestMethod.POST)
+    @ResponseBody
+    public String updateHeaderUrl(String fileName){
+        if(StringUtils.isBlank(fileName)){
+            return CommunityUtil.getJSONString(1, "文件名不能为空！");
+        }
+
+        String url = headerBucketUrl + "/" + fileName;
+        userService.updateHeader(hostHolder.getUser().getId(), url);
+
+        return CommunityUtil.getJSONString(0);
+    }
+
+    //废弃
     @LoginRequired
     //接收文件
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
@@ -96,6 +151,8 @@ public class UserController {
         return "redirect:/index/page/1";
     }
 
+
+    //废弃
     //获取头像(通过流手动向浏览器输出)
     @RequestMapping(value = "/header/{fileName}", method = RequestMethod.GET)
     public void getHeader(@PathVariable("fileName") String fileName, HttpServletResponse response) {
@@ -136,5 +193,36 @@ public class UserController {
         model.addAttribute("target","/index/page/1");
         model.addAttribute("msg","修改密码成功！！");
         return "/site/operate-result";
+    }
+
+    //个人主页
+    @RequestMapping(value = "/profile/{userId}",method = RequestMethod.GET)
+    public String getProfilePage(@PathVariable("userId") int userId, Model model){
+        User user = userService.findUserById(userId);
+        if(user == null){
+            throw new RuntimeException("该用户不存在！");
+        }
+
+        //用户
+        model.addAttribute("user", user);
+        //点赞数量
+        long likeCount = likeService.findUserLikeCount(userId);
+        model.addAttribute("likeCount", likeCount);
+
+        //关注数量
+        long followeeCount = followService.findFolloweeCount(userId, ENTITY_TYPE_USER);
+        model.addAttribute("followeeCount", followeeCount);
+        //粉丝数量
+        long followerCount = followService.findFollowerCount(ENTITY_TYPE_USER, userId);
+        model.addAttribute("followerCount", followerCount);
+        //是否已关注
+        boolean hasFollowed = false;
+        if(hostHolder.getUser() != null){
+            //hostholder这个user的id是登陆的用户的id，后面这个userid是访问当前空间的id
+            hasFollowed = followService.hasFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
+            model.addAttribute("hasFollowed", hasFollowed);
+        }
+
+        return "site/profile";
     }
 }

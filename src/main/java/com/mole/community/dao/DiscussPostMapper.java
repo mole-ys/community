@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface DiscussPostMapper {
     //查询特定用户的帖子，若id为0，查询所有帖子(除了拉黑的)
-    List<DiscussPost> selectDiscussPosts(int userId);
+    List<DiscussPost> selectDiscussPosts(int userId, int orderMode);
 
     //查询表里一共多少数据
     //@Param用于给参数起别名
@@ -27,4 +27,13 @@ public interface DiscussPostMapper {
 
     //更新commentCount评论数量
     int updateCommentCount(int id, int commentCount);
+
+    //修改帖子类型
+    int updateType(int id, int type);
+
+    //修改帖子状态
+    int updateStatus(int id, int status);
+
+    //修改帖子分数
+    int updateScore(int id, double score);
 }

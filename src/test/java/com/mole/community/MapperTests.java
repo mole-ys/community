@@ -75,7 +75,7 @@ public class MapperTests {
 
     @Test
     public void TestSelectPosts(){
-        List<DiscussPost> discussPosts = discussPostMapper.selectDiscussPosts(149);
+        List<DiscussPost> discussPosts = discussPostMapper.selectDiscussPosts(149,0);
         discussPosts.forEach(System.out::println);
         int rows = discussPostMapper.selectDiscussPostRows(0);
         System.out.println(rows);
